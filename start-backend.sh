@@ -4,7 +4,6 @@ set -e
 cd "$(dirname "$0")"
 PROJECT_ROOT=$(pwd)
 
-# --- Check port conflicts ---
 check_port() {
     local port=$1
     local pid
@@ -25,33 +24,13 @@ check_port() {
 }
 
 check_port 8000
-check_port 5173
 
-# --- Backend setup ---
 if [ ! -d ".venv" ]; then
     echo "Creating virtual environment..."
     python3 -m venv .venv
     .venv/bin/pip install -e ".[dev]" -q
 fi
 source .venv/bin/activate
-
-# --- Frontend setup ---
-if [ ! -d "frontend/node_modules" ]; then
-    echo "Installing frontend dependencies..."
-    npm --prefix frontend install
-fi
-
-# Start frontend dev server in background
-echo "Starting frontend (Vite)..."
-npm --prefix frontend run dev &
-FRONTEND_PID=$!
-
-# Cleanup on exit
-cleanup() {
-    echo "Stopping frontend..."
-    kill "$FRONTEND_PID" 2>/dev/null
-}
-trap cleanup EXIT
 
 echo "Starting quant-lab backend..."
 uvicorn quant_lab.main:app --reload --host 0.0.0.0 --port 8000

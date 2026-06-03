@@ -252,7 +252,30 @@ export default function TradingPanel({ symbol, lastPrice, mode, onEventUpdate }:
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
           <div style={{ flexShrink: 0 }}>
           {/* Account name */}
-          <div style={{ fontSize: 11, color: '#6a6a80', marginBottom: 12 }}>{account.name}</div>
+          <div style={{ fontSize: 11, color: '#6a6a80', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+            {account.name}
+            {mode === 'perpetual' && (
+              editingLev ? (
+                <>
+                  <span style={{ color: '#7c7cff' }}>杠杆 </span>
+                  <input type="number" min="1" max="150" value={levInput}
+                    onChange={e => setLevInput(e.target.value)}
+                    style={{ width: 40, padding: '1px 3px', fontSize: 10, background: '#14142a', border: '1px solid #2a2a44', borderRadius: 3, color: '#e0e0e0' }}
+                  />
+                  <button className="mode-btn" style={{ fontSize: 9, color: '#26a69a', padding: '1px 4px' }} onClick={async () => {
+                    const n = parseInt(levInput);
+                    if (isNaN(n) || n < 1 || n > 150) { alert('杠杆范围 1-150x'); return; }
+                    try { await api.setLeverage(account.id, n); setLeverage(String(n)); setEditingLev(false); } catch {}
+                  }}>确认</button>
+                  <button className="mode-btn" style={{ fontSize: 9, color: '#6a6a80', padding: '1px 4px' }} onClick={() => setEditingLev(false)}>取消</button>
+                </>
+              ) : (
+                <span style={{ color: '#7c7cff', cursor: 'pointer', background: '#14142a', padding: '1px 6px', borderRadius: 4, fontSize: 10 }} onClick={() => { setLevInput(leverage); setEditingLev(true); }}>
+                  默认杠杆 {leverage}x
+                </span>
+              )
+            )}
+          </div>
 
           {/* ---- Spot order form ---- */}
           {mode === 'spot' && (
@@ -377,25 +400,6 @@ export default function TradingPanel({ symbol, lastPrice, mode, onEventUpdate }:
                   onClick={() => setSide('sell')}
                 >做空</button>
               </div>
-              <div className="form-row" style={{ marginBottom: 8 }}>
-                <label>杠杆 (1-150x)</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="150"
-                  step="1"
-                  value={leverage}
-                  onChange={e => {
-                    const v = e.target.value;
-                    if (!v) { setLeverage(''); return; }
-                    const n = parseInt(v);
-                    if (n < 1) setLeverage('1');
-                    else if (n > 150) setLeverage('150');
-                    else setLeverage(v);
-                  }}
-                  placeholder="10"
-                />
-              </div>
               <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
                 <button className={`mode-btn ${!isLimit ? 'active' : ''}`} onClick={() => setIsLimit(false)}>市价</button>
                 <button className={`mode-btn ${isLimit ? 'active' : ''}`} onClick={() => setIsLimit(true)}>限价</button>
@@ -440,25 +444,6 @@ export default function TradingPanel({ symbol, lastPrice, mode, onEventUpdate }:
                 {hasQty && <div>强平价格 {liqText || `${liqPrice.toFixed(2)} USDT`}</div>}
                 <div>可开 {availOpen.toFixed(useUsdt ? 2 : 6)} {useUsdt ? 'USDT' : baseAsset}</div>
                 <div>保证金 {margin.toFixed(2)} USDT <span style={{ color: '#4a4a6a' }}>全仓</span>
-                  {editingLev ? (
-                    <>
-                      <span style={{ marginLeft: 6, color: '#7c7cff' }}>杠杆 </span>
-                      <input type="number" min="1" max="150" value={levInput}
-                        onChange={e => setLevInput(e.target.value)}
-                        style={{ width: 40, padding: '1px 3px', fontSize: 10, background: '#14142a', border: '1px solid #2a2a44', borderRadius: 3, color: '#e0e0e0' }}
-                      />
-                      <button className="mode-btn" style={{ fontSize: 9, color: '#26a69a', padding: '1px 4px' }} onClick={async () => {
-                        const n = parseInt(levInput);
-                        if (isNaN(n) || n < 1 || n > 150) return;
-                        try { await api.setLeverage(account.id, n); setLeverage(String(n)); setEditingLev(false); } catch {}
-                      }}>确认</button>
-                      <button className="mode-btn" style={{ fontSize: 9, color: '#6a6a80', padding: '1px 4px' }} onClick={() => setEditingLev(false)}>取消</button>
-                    </>
-                  ) : (
-                    <span style={{ marginLeft: 6, color: '#7c7cff', cursor: 'pointer' }} onClick={() => { setLevInput(leverage); setEditingLev(true); }}>
-                      {leverage}x
-                    </span>
-                  )}
                 </div>
               </div>
               {quantity && parseFloat(quantity) > 0 && (() => {
@@ -789,23 +774,31 @@ export default function TradingPanel({ symbol, lastPrice, mode, onEventUpdate }:
                   <div key={o.id} style={{ fontSize: 12, padding: '6px 0', borderBottom: '1px solid #14142a', display: 'flex', justifyContent: 'space-between' }}>
                     <div>
                       {o.status === 'canceled' ? (
-                        <span style={{ color: '#6a6a80', fontWeight: 500 }}>撤销</span>
-                      ) : (
-                        <span style={{ color: o.side === 'buy' ? '#26a69a' : '#ef5350', fontWeight: 500 }}>
-                          {o.side === 'buy' ? '买入' : '卖出'}
-                        </span>
-                      )}
-                      <span style={{ color: '#6a6a80', marginLeft: 4 }}>{o.symbol}</span>
-                    </div>
-                    <div>
-                      {o.status === 'canceled' ? (
-                        <span style={{ color: '#6a6a80' }}>已撤销</span>
+                        <>
+                          <span style={{ color: '#6a6a80', fontWeight: 500 }}>撤销</span>
+                          <span style={{ color: '#6a6a80', marginLeft: 4 }}>{o.symbol}</span>
+                        </>
                       ) : (
                         <>
-                          <span>{o.filled_qty || o.quantity}</span>
-                          <span style={{ color: '#6a6a80', marginLeft: 4 }}>@{o.filled_price?.toFixed(2) || o.price?.toFixed(2)}</span>
+                          <span style={{ color: o.side === 'buy' ? '#26a69a' : '#ef5350', fontWeight: 500 }}>
+                            {o.side === 'buy' ? '买入' : '卖出'}
+                          </span>
+                          <span style={{ color: '#6a6a80', marginLeft: 4 }}>{o.symbol}</span>
                         </>
                       )}
+                    </div>
+                    <div>
+                      {(() => {
+                        const qty = o.status === 'canceled' ? o.quantity : (o.filled_qty || o.quantity);
+                        const fmtQty = typeof qty === 'number' && qty < 0.001 ? qty.toFixed(8) : qty.toFixed(6);
+                        const price = o.filled_price || o.price;
+                        return (
+                          <>
+                            <span>{fmtQty}</span>
+                            <span style={{ color: '#6a6a80', marginLeft: 4 }}>@{price?.toFixed(2)}</span>
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 ));
@@ -818,7 +811,7 @@ export default function TradingPanel({ symbol, lastPrice, mode, onEventUpdate }:
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, paddingLeft: 2 }}>
                   <span style={{ fontSize: 10, color: '#4a4a6a' }}>
-                    {mode === 'perpetual' ? 'Taker 0.05% / Maker 0.02% 手续费' : '默认无手续费'}
+                    {mode === 'perpetual' ? 'Taker 0.05% / Maker 0.02% 手续费' : mode === 'event' ? '' : '默认无手续费'}
                   </span>
                   {mode !== 'event' && (
                     <label style={{ fontSize: 10, color: '#6a6a80', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>

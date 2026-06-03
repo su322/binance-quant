@@ -488,7 +488,7 @@ export default function App() {
         {activeTab === 'chart' && (
           <div className="content-row">
             <div className="chart-area" style={{ flex: 1, minWidth: 0 }}>
-              <KlineChart ref={chartRef} data={klines} height={600} symbol={symbol} key={`${symbol}-${interval}`} onLoadMore={handleLoadMore} eventEntryPrice={eventEntryPrice} eventCountdown={eventCountdown} />
+              <KlineChart ref={chartRef} data={klines} height={600} symbol={symbol} key={`${symbol}-${interval}-${mode}`} onLoadMore={handleLoadMore} eventEntryPrice={eventEntryPrice} eventCountdown={eventCountdown} />
             </div>
             <div
               style={{ width: 4, cursor: 'col-resize', flexShrink: 0, background: '#1e1e3a', position: 'relative' }}

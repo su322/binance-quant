@@ -1,3 +1,22 @@
 .DS_Store
 
 .idea/
+.env
+__pycache__/
+node_modules/
+dist/
+*.egg-info/
+.venv/
+
+# Database
+database/quantlab.db
+quant-lab/database/quantlab.db
+
+# Debug screenshots / snapshots
+*.png
+browser-snapshot.txt
+page-snapshot.txt
+
+# Vite / Playwright cache
+.vite/
+.playwright-mcp/

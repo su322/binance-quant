@@ -1,0 +1,36 @@
+[project]
+name = "binance-quant"
+version = "0.1.0"
+description = "Crypto quant research platform"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.29.0",
+    "sqlalchemy>=2.0.30",
+    "alembic>=1.13.0",
+    "pandas>=2.2.0",
+    "numpy>=1.26.0",
+    "pandas-ta>=0.3.74b0",
+    "binance-connector>=3.0.0",
+    "binance-sdk-derivatives-trading-usds-futures>=2.0.0",
+    "websockets>=12.0",
+    "python-socks>=2.0.0",
+    "pydantic>=2.7.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[tool.setuptools]
+packages = [
+    "libs", "libs.core", "libs.core.data", "libs.core.engines",
+    "libs.core.features", "libs.core.models", "libs.core.products",
+    "libs.core.strategies", "libs.exchanges", "libs.exchanges.binance",
+    "libs.indicators",
+    "quant_lab", "quant_lab.database", "quant_lab.routers",
+    "quant_lab.services", "quant_lab.simulation",
+]
+package-dir = {"quant_lab" = "quant-lab"}

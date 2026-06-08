@@ -31,7 +31,7 @@ def list_favorites(
     return [{"id": r.id, "symbol": r.symbol, "mode": r.mode} for r in rows]
 
 
-@router.post("/favorites")
+@router.post("/symbol-favorites")
 def add_favorite(req: AddFavoriteRequest, request: Request):
     session = get_db(request)
     q = session.query(Favorite).filter(
@@ -47,7 +47,7 @@ def add_favorite(req: AddFavoriteRequest, request: Request):
     return {"id": fav.id, "symbol": fav.symbol, "mode": fav.mode}
 
 
-@router.delete("/favorites/{fav_id}")
+@router.delete("/symbol-favorites/{fav_id}")
 def delete_favorite(fav_id: int, request: Request):
     session = get_db(request)
     session.query(Favorite).filter(Favorite.id == fav_id).delete()

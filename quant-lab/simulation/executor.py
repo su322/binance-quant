@@ -1,6 +1,5 @@
 """Simulated order execution engine."""
 from datetime import datetime
-from decimal import Decimal
 from sqlalchemy.orm import Session
 from quant_lab.database.models import Account, Order, Position, Trade, OrderStatus
 

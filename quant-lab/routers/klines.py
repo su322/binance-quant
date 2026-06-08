@@ -1,4 +1,3 @@
-import time
 from datetime import datetime
 from fastapi import APIRouter, Request, Query
 import httpx

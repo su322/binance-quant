@@ -3,7 +3,6 @@ from datetime import datetime
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 import httpx
-from sqlalchemy.orm import Session
 from quant_lab.database.models import Account, Trade
 from quant_lab.services.account_service import AccountService
 

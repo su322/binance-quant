@@ -2,7 +2,6 @@
 import pandas as pd
 from sqlalchemy.orm import Session
 from libs.core.data.provider import DataProvider
-from libs.core.features.base import Feature
 from libs.core.strategies.base import Strategy
 from libs.core.engines.replay import ReplayEngine
 from quant_lab.database.models import ReplaySession

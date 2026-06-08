@@ -1,7 +1,5 @@
 """Real-time WebSocket — polls Binance REST every 1s, no WS dependency."""
 import asyncio
-import json
-import sys
 from fastapi import APIRouter, WebSocket, Query
 from starlette.websockets import WebSocketDisconnect
 import httpx

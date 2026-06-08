@@ -88,7 +88,7 @@ export default function AccountPanel() {
                       {a.net_value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="ta-right" style={{ fontVariantNumeric: 'tabular-nums', color: '#c8c8d4' }}>
-                      {a.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {(a.available_balance ?? a.balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className={`ta-right ${pnlClass}`} style={{ fontVariantNumeric: 'tabular-nums' }}>
                       {a.total_pnl >= 0 ? '+' : ''}{a.total_pnl.toFixed(2)}

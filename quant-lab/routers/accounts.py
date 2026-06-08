@@ -52,6 +52,7 @@ def _account_with_pnl(svc: AccountService, acc, prices: dict[str, float], mode: 
     positions = []
     position_history = []
     total_position_value = 0.0
+    frozen_margin = 0.0
     for p in positions_list:
         price = prices.get(p.symbol, 0)
         pos_data = {
@@ -65,11 +66,18 @@ def _account_with_pnl(svc: AccountService, acc, prices: dict[str, float], mode: 
             total_position_value += price * p.quantity
         else:
             position_history.append(pos_data)
+    # Calculate frozen margin from pending perpetual orders
+    all_orders = svc.get_orders(acc.id)
+    for o in all_orders:
+        if o.status.value == 'pending' and o.mode == 'perpetual' and o.price:
+            lev = acc.default_leverage or 3
+            frozen_margin += o.quantity * o.price / lev
     net_value = acc.balance + total_position_value
     total_pnl = net_value - acc.initial_balance
     pnl_percent = (total_pnl / acc.initial_balance * 100) if acc.initial_balance > 0 else 0
     return {
         "id": acc.id, "name": acc.name, "balance": acc.balance,
+        "available_balance": round(acc.balance - frozen_margin, 2),
         "is_active": acc.is_active, "default_leverage": acc.default_leverage,
         "net_value": round(net_value, 2),
         "total_pnl": round(total_pnl, 2),
@@ -85,6 +93,7 @@ def create_account(req: CreateAccountRequest, request: Request):
     acc = svc.create_account(req.name, req.balance)
     return {
         "id": acc.id, "name": acc.name, "balance": acc.balance,
+        "available_balance": round(acc.balance, 2),
         "is_active": acc.is_active, "default_leverage": acc.default_leverage,
         "net_value": round(acc.balance, 2),
         "total_pnl": 0, "pnl_percent": 0,

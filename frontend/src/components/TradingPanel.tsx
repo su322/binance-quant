@@ -776,17 +776,17 @@ export default function TradingPanel({ symbol, lastPrice, mode, onEventOrdersCha
               if (bottomTab === 'pending') {
                 const pendingOrders = orders.filter(o => o.status === 'pending' && o.type !== 'event' && o.mode === mode);
                 if (pendingOrders.length === 0) return <div style={{ fontSize: 11, color: '#4a4a6a', textAlign: 'center', padding: '16px 0' }}>暂无数据</div>;
-                return pendingOrders.slice().reverse().map(o => (
-                  <div key={o.id} style={{ fontSize: 12, padding: '6px 0', borderBottom: '1px solid #14142a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <span style={{ color: o.side === 'buy' ? '#26a69a' : '#ef5350', fontWeight: 500 }}>
-                        {o.side === 'buy' ? '买入' : '卖出'}
+                return pendingOrders.slice().reverse().map(o => {
+                  const fmtQty = o.quantity < 0.001 ? o.quantity.toFixed(8) : o.quantity.toFixed(6);
+                  return (
+                  <div key={o.id} style={{ fontSize: 12, padding: '6px 0', borderBottom: '1px solid #14142a' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                      <span>
+                        <span style={{ color: o.side === 'buy' ? '#26a69a' : '#ef5350', fontWeight: 500 }}>
+                          {o.side === 'buy' ? '买入' : '卖出'}
+                        </span>
+                        <span style={{ color: '#6a6a80', marginLeft: 4 }}>{o.symbol}</span>
                       </span>
-                      <span style={{ color: '#6a6a80', marginLeft: 4 }}>{o.symbol}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span>{o.quantity}</span>
-                      <span style={{ color: '#6a6a80' }}>@{o.price?.toFixed(2)}</span>
                       <button
                         onClick={() => handleCancelOrder(o.id)}
                         style={{
@@ -796,8 +796,13 @@ export default function TradingPanel({ symbol, lastPrice, mode, onEventOrdersCha
                         }}
                       >撤单</button>
                     </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6a6a80', fontSize: 11 }}>
+                      <span>{fmtQty} @ {o.price?.toFixed(2)}</span>
+                      <span>{formatTime(o.created_at)}</span>
+                    </div>
                   </div>
-                ));
+                  );
+                });
               }
 
               if (bottomTab === 'history') {

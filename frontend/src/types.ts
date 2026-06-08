@@ -21,6 +21,7 @@ export interface Account {
   id: number;
   name: string;
   balance: number;
+  available_balance?: number;
   is_active: boolean;
   default_leverage: number;
   net_value: number;

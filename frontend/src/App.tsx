@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import KlineChart from './components/KlineChart';
-import type { KlineChartHandle } from './components/KlineChart';
+import type { KlineChartHandle, EventLine } from './components/KlineChart';
 import BacktestForm from './components/BacktestForm';
 import AccountPanel from './components/AccountPanel';
 import TradingPanel from './components/TradingPanel';
 import { api } from './api/quantlab';
-import type { Kline, BacktestResult, Favorite } from './types';
+import type { Kline, BacktestResult, Favorite, Order } from './types';
 
 type Tab = 'chart' | 'backtest' | 'accounts' | 'replay';
 type Mode = 'spot' | 'perpetual' | 'event';
@@ -64,9 +64,8 @@ export default function App() {
   const dragRef = useRef(false);
   const loadingMoreRef = useRef(false);
   const noMoreDataRef = useRef(false);
-  const [eventEntryPrice, setEventEntryPrice] = useState(0);
-  const [eventCountdown, setEventCountdown] = useState('');
-  const countdownTimer = useRef<ReturnType<typeof window.setInterval>>();
+  const [eventOrders, setEventOrders] = useState<Order[]>([]);
+  const [tick, setTick] = useState(0);
 
   const getRemainingSeconds = (createdAt: string, dur: string) => {
     const map: Record<string, number> = { '10m': 600, '30m': 1800, '1h': 3600, '1d': 86400 };
@@ -76,23 +75,14 @@ export default function App() {
     return Math.max(0, Math.ceil(secs - elapsed));
   };
 
-  const handleEventUpdate = useCallback((entryPrice: number, createdAt: string, duration: string) => {
-    setEventEntryPrice(entryPrice);
-    if (countdownTimer.current) window.clearInterval(countdownTimer.current);
-    if (entryPrice > 0 && createdAt) {
-      const update = () => {
-        const remaining = getRemainingSeconds(createdAt, duration);
-        if (remaining > 0) {
-          setEventCountdown(`${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, '0')}`);
-        } else {
-          setEventCountdown('结算中');
-        }
-      };
-      update();
-      countdownTimer.current = window.setInterval(update, 1000);
-    } else {
-      setEventCountdown('');
-    }
+  const handleEventOrdersChange = useCallback((orders: Order[]) => {
+    setEventOrders(orders);
+  }, []);
+
+  // Tick every second for countdown updates
+  useEffect(() => {
+    const timer = window.setInterval(() => setTick(t => t + 1), 1000);
+    return () => { window.clearInterval(timer); };
   }, []);
 
   const handleLoadMore = useCallback(async (oldestTimestamp: number) => {
@@ -192,10 +182,6 @@ export default function App() {
 
   const handleModeChange = useCallback((m: Mode) => {
     setMode(m);
-    if (m !== 'event') {
-      setEventEntryPrice(0);
-      setEventCountdown('');
-    }
     if (m === 'event' && symbol !== 'BTCUSDT' && symbol !== 'ETHUSDT') {
       changeSymbol('BTCUSDT');
     }
@@ -301,6 +287,25 @@ export default function App() {
   ];
 
   const isFavSymbol = favSymbols.some(f => f.symbol === symbol);
+
+  // Compute event price lines with countdowns
+  const eventLines: EventLine[] = [];
+  if (mode === 'event' && eventOrders.length > 0) {
+    const durMap: Record<string, number> = { '10m': 600, '30m': 1800, '1h': 3600, '1d': 86400 };
+    const pending = eventOrders.filter(o => o.status === 'pending' && o.symbol === symbol);
+    pending.forEach(o => {
+      const isUp = o.side === 'buy';
+      const remaining = getRemainingSeconds(o.created_at, o.duration || '30m');
+      const countdown = remaining > 0
+        ? `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, '0')}`
+        : '结算中';
+      eventLines.push({
+        price: o.price || 0,
+        title: `${isUp ? '看涨' : '看跌'} ${countdown}`,
+        side: o.side,
+      });
+    });
+  }
 
   return (
     <div className="app">
@@ -488,7 +493,7 @@ export default function App() {
         {activeTab === 'chart' && (
           <div className="content-row">
             <div className="chart-area" style={{ flex: 1, minWidth: 0 }}>
-              <KlineChart ref={chartRef} data={klines} height={600} symbol={symbol} key={`${symbol}-${interval}-${mode}`} onLoadMore={handleLoadMore} eventEntryPrice={eventEntryPrice} eventCountdown={eventCountdown} />
+              <KlineChart ref={chartRef} data={klines} height={600} symbol={symbol} key={`${symbol}-${interval}-${mode}`} onLoadMore={handleLoadMore} eventLines={eventLines} />
             </div>
             <div
               style={{ width: 4, cursor: 'col-resize', flexShrink: 0, background: '#1e1e3a', position: 'relative' }}
@@ -508,7 +513,7 @@ export default function App() {
               }}
             />
             <div style={{ width: rightWidth, flexShrink: 0 }}>
-              <TradingPanel symbol={symbol} lastPrice={latestPrice || (klines.length > 0 ? klines[klines.length - 1].close : 0)} mode={mode} onEventUpdate={handleEventUpdate} />
+              <TradingPanel symbol={symbol} lastPrice={latestPrice || (klines.length > 0 ? klines[klines.length - 1].close : 0)} mode={mode} onEventOrdersChange={handleEventOrdersChange} />
             </div>
           </div>
         )}

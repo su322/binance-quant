@@ -16,16 +16,21 @@ export interface KlineChartHandle {
   loadMoreData: (prepended: Kline[]) => void;
 }
 
+export interface EventLine {
+  price: number;
+  title: string;
+  side: string;
+}
+
 interface Props {
   data: Kline[];
   height?: number;
   symbol?: string;
   onLoadMore?: (oldestTimestamp: number) => void;
-  eventEntryPrice?: number;
-  eventCountdown?: string;
+  eventLines?: EventLine[];
 }
 
-const KlineChart = memo(forwardRef<KlineChartHandle, Props>(({ data, height = 500, symbol = '', onLoadMore, eventEntryPrice, eventCountdown }, ref) => {
+const KlineChart = memo(forwardRef<KlineChartHandle, Props>(({ data, height = 500, symbol = '', onLoadMore, eventLines }, ref) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -37,8 +42,7 @@ const KlineChart = memo(forwardRef<KlineChartHandle, Props>(({ data, height = 50
   const oldestTimeRef = useRef(0);
   const lastLoadTimeRef = useRef(0);
   const priceLineRef = useRef<IPriceLine | null>(null);
-  const eventPriceLineRef = useRef<IPriceLine | null>(null);
-  const eventCountdownRef = useRef<HTMLDivElement | null>(null);
+  const eventPriceLinesRef = useRef<IPriceLine[]>([]);
   const latestLabelRef = useRef<HTMLDivElement | null>(null);
   const latestPriceRef = useRef(0);
   const positionLabelRef = useRef<() => void>(() => {});
@@ -192,17 +196,18 @@ const KlineChart = memo(forwardRef<KlineChartHandle, Props>(({ data, height = 50
       axisLabelVisible: true,
     });
 
-    // Recreate event price line if active
-    if (eventEntryPrice && eventEntryPrice > 0) {
-      eventPriceLineRef.current = candleSeries.createPriceLine({
-        price: eventEntryPrice,
+    // Create price lines for pending event orders
+    (eventLines || []).forEach(line => {
+      const pl = candleSeries.createPriceLine({
+        price: line.price,
         color: '#f0ad4e',
         lineWidth: 1,
         lineStyle: 2,
         axisLabelVisible: true,
-        title: eventCountdown || '入场价',
+        title: line.title,
       });
-    }
+      eventPriceLinesRef.current.push(pl);
+    });
 
     chart.addPane();
     const volSeries = chart.addSeries(HistogramSeries, {
@@ -381,7 +386,7 @@ const KlineChart = memo(forwardRef<KlineChartHandle, Props>(({ data, height = 50
       chartRef.current = null;
       candleSeriesRef.current = null;
       volumeSeriesRef.current = null;
-      eventPriceLineRef.current = null;
+      eventPriceLinesRef.current = [];
       tooltip.remove();
       latestLabel.remove();
       latestLabelRef.current = null;
@@ -389,33 +394,24 @@ const KlineChart = memo(forwardRef<KlineChartHandle, Props>(({ data, height = 50
     };
   }, [data, height]);
 
-  // Event entry price line
+  // Multiple price lines for pending event orders
   useEffect(() => {
     const series = candleSeriesRef.current;
     if (!series) return;
-    if (eventPriceLineRef.current) {
-      series.removePriceLine(eventPriceLineRef.current);
-      eventPriceLineRef.current = null;
-    }
-    if (eventEntryPrice && eventEntryPrice > 0) {
-      eventPriceLineRef.current = series.createPriceLine({
-        price: eventEntryPrice,
+    eventPriceLinesRef.current.forEach(line => series.removePriceLine(line));
+    eventPriceLinesRef.current = [];
+    (eventLines || []).forEach(line => {
+      const pl = series.createPriceLine({
+        price: line.price,
         color: '#f0ad4e',
         lineWidth: 1,
         lineStyle: 2,
         axisLabelVisible: true,
-        title: '入场价',
+        title: line.title,
       });
-    }
-  }, [eventEntryPrice]);
-
-  // Update event price line title with countdown
-  useEffect(() => {
-    if (!eventPriceLineRef.current || !eventEntryPrice) return;
-    eventPriceLineRef.current.applyOptions({
-      title: eventCountdown ? `${eventCountdown}` : '入场价',
+      eventPriceLinesRef.current.push(pl);
     });
-  }, [eventCountdown, eventEntryPrice]);
+  }, [eventLines]);
 
   if (data.length === 0) {
     return (

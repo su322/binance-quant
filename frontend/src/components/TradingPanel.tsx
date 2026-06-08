@@ -6,12 +6,12 @@ interface Props {
   symbol: string;
   lastPrice: number;
   mode: 'spot' | 'perpetual' | 'event';
-  onEventUpdate?: (entryPrice: number, created_at: string, duration: string) => void;
+  onEventOrdersChange?: (orders: Order[]) => void;
 }
 
 const MMR = 0.004;
 
-export default function TradingPanel({ symbol, lastPrice, mode, onEventUpdate }: Props) {
+export default function TradingPanel({ symbol, lastPrice, mode, onEventOrdersChange }: Props) {
   const [account, setAccount] = useState<Account | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [placing, setPlacing] = useState(false);
@@ -55,14 +55,9 @@ export default function TradingPanel({ symbol, lastPrice, mode, onEventUpdate }:
       if (acc && (acc as Account).id) {
         api.getOrders((acc as Account).id).then(newOrders => {
           setOrders(newOrders);
-          if (onEventUpdate && mode === 'event') {
-            const eventPending = (newOrders as Order[]).filter((o: Order) => o.type === 'event' && o.status === 'pending');
-            if (eventPending.length > 0) {
-              const o = eventPending[0];
-              onEventUpdate(o.price || 0, o.created_at, o.duration || '30m');
-            } else {
-              onEventUpdate(0, '', '');
-            }
+          if (onEventOrdersChange && mode === 'event') {
+            const eventOrders = (newOrders as Order[]).filter((o: Order) => o.type === 'event');
+            onEventOrdersChange(eventOrders);
           }
         }).catch(() => {});
       }

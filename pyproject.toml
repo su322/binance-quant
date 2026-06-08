@@ -13,6 +13,7 @@ dependencies = [
     "pandas-ta>=0.3.74b0",
     "binance-connector>=3.0.0",
     "binance-sdk-derivatives-trading-usds-futures>=2.0.0",
+    "httpx>=0.27.0",
     "websockets>=12.0",
     "python-socks>=2.0.0",
     "pydantic>=2.7.0",

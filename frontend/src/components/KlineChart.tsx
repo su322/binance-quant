@@ -20,6 +20,7 @@ export interface EventLine {
   price: number;
   title: string;
   side: string;
+  color?: string;
 }
 
 interface Props {
@@ -403,7 +404,7 @@ const KlineChart = memo(forwardRef<KlineChartHandle, Props>(({ data, height = 50
     (eventLines || []).forEach(line => {
       const pl = series.createPriceLine({
         price: line.price,
-        color: '#f0ad4e',
+        color: line.color || '#f0ad4e',
         lineWidth: 1,
         lineStyle: 2,
         axisLabelVisible: true,

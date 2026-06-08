@@ -1,17 +1,19 @@
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '../api/quantlab';
 import type { Account, Order } from '../types';
+import type { EventLine } from './KlineChart';
 
 interface Props {
   symbol: string;
   lastPrice: number;
   mode: 'spot' | 'perpetual' | 'event';
   onEventOrdersChange?: (orders: Order[]) => void;
+  onPriceLinesChange?: (lines: EventLine[]) => void;
 }
 
 const MMR = 0.004;
 
-export default function TradingPanel({ symbol, lastPrice, mode, onEventOrdersChange }: Props) {
+export default function TradingPanel({ symbol, lastPrice, mode, onEventOrdersChange, onPriceLinesChange }: Props) {
   const [account, setAccount] = useState<Account | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [placing, setPlacing] = useState(false);
@@ -78,6 +80,37 @@ export default function TradingPanel({ symbol, lastPrice, mode, onEventOrdersCha
   useEffect(() => {
     setBottomTab(mode === 'event' ? 'open' : 'positions');
   }, [mode]);
+
+  // Compute price lines for perpetual chart (pending orders + position entries)
+  useEffect(() => {
+    if (!onPriceLinesChange) return;
+    const lines: EventLine[] = [];
+    if (mode === 'perpetual' && account) {
+      // Pending limit orders for current symbol
+      orders.filter(o => o.status === 'pending' && o.mode === 'perpetual' && o.symbol === symbol && o.price).forEach(o => {
+        lines.push({
+          price: o.price!,
+          title: `${o.side === 'buy' ? '做多' : '做空'}委托 ${o.price!.toFixed(2)}`,
+          side: o.side,
+          color: '#f0ad4e',
+        });
+      });
+      // Open positions for current symbol
+      (account.positions || []).filter(p => p.quantity > 0 && p.symbol === symbol).forEach(p => {
+        const pnl = p.side === 'long'
+          ? (lastPrice - p.avg_entry) * p.quantity
+          : (p.avg_entry - lastPrice) * p.quantity;
+        const pnlStr = `${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}`;
+        lines.push({
+          price: p.avg_entry,
+          title: `${p.side === 'long' ? '做多' : '做空'} ${p.avg_entry.toFixed(2)} ${pnlStr}`,
+          side: p.side === 'long' ? 'buy' : 'sell',
+          color: (p.side || 'long') === 'long' ? '#26a69a' : '#ef5350',
+        });
+      });
+    }
+    onPriceLinesChange(lines);
+  }, [mode, account, orders, symbol, onPriceLinesChange]);
 
   useEffect(() => {
     if (mode === 'perpetual' && symbol) {
@@ -216,8 +249,13 @@ export default function TradingPanel({ symbol, lastPrice, mode, onEventOrdersCha
   let liqPrice = 0;
   let liqText = '';
   let availOpen = 0;
+  let frozenMargin = 0;
   if (account && mode === 'perpetual') {
-    availOpen = useUsdt ? account.balance * lev : account.balance * lev / price;
+    frozenMargin = orders
+      .filter(o => o.status === 'pending' && o.mode === 'perpetual')
+      .reduce((sum, o) => sum + (o.quantity * (o.price || price)) / lev, 0);
+    const effectiveBalance = Math.max(0, account.balance - frozenMargin);
+    availOpen = useUsdt ? effectiveBalance * lev : effectiveBalance * lev / price;
     if (quantity && parseFloat(quantity) > 0) {
       hasQty = true;
       const q = parseFloat(quantity);

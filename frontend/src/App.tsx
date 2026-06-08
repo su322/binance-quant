@@ -66,6 +66,7 @@ export default function App() {
   const noMoreDataRef = useRef(false);
   const [eventOrders, setEventOrders] = useState<Order[]>([]);
   const [tick, setTick] = useState(0);
+  const [priceLines, setPriceLines] = useState<EventLine[]>([]);
 
   const getRemainingSeconds = (createdAt: string, dur: string) => {
     const map: Record<string, number> = { '10m': 600, '30m': 1800, '1h': 3600, '1d': 86400 };
@@ -77,6 +78,10 @@ export default function App() {
 
   const handleEventOrdersChange = useCallback((orders: Order[]) => {
     setEventOrders(orders);
+  }, []);
+
+  const handlePriceLinesChange = useCallback((lines: EventLine[]) => {
+    setPriceLines(lines);
   }, []);
 
   // Tick every second for countdown updates
@@ -493,7 +498,7 @@ export default function App() {
         {activeTab === 'chart' && (
           <div className="content-row">
             <div className="chart-area" style={{ flex: 1, minWidth: 0 }}>
-              <KlineChart ref={chartRef} data={klines} height={600} symbol={symbol} key={`${symbol}-${interval}-${mode}`} onLoadMore={handleLoadMore} eventLines={eventLines} />
+              <KlineChart ref={chartRef} data={klines} height={600} symbol={symbol} key={`${symbol}-${interval}-${mode}`} onLoadMore={handleLoadMore} eventLines={[...eventLines, ...priceLines]} />
             </div>
             <div
               style={{ width: 4, cursor: 'col-resize', flexShrink: 0, background: '#1e1e3a', position: 'relative' }}
@@ -513,7 +518,7 @@ export default function App() {
               }}
             />
             <div style={{ width: rightWidth, flexShrink: 0 }}>
-              <TradingPanel symbol={symbol} lastPrice={latestPrice || (klines.length > 0 ? klines[klines.length - 1].close : 0)} mode={mode} onEventOrdersChange={handleEventOrdersChange} />
+              <TradingPanel symbol={symbol} lastPrice={latestPrice || (klines.length > 0 ? klines[klines.length - 1].close : 0)} mode={mode} onEventOrdersChange={handleEventOrdersChange} onPriceLinesChange={handlePriceLinesChange} />
             </div>
           </div>
         )}

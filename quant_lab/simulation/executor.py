@@ -1,14 +1,12 @@
 """Simulated order execution engine."""
 from datetime import datetime
 from sqlalchemy.orm import Session
+from quant_lab.constants import EVENT_DURATION_SECONDS, EVENT_PAYOUT_RATES
 from quant_lab.database.models import Account, Order, Position, Trade, OrderStatus
 
 TAKER_FEE_RATE = 0.0005  # 0.05% taker (market order) fee for perpetual
 MAKER_FEE_RATE = 0.0002  # 0.02% maker (limit order) fee for perpetual
 SPOT_FEE_RATE = 0.0
-
-_DURATION_SECONDS = {"10m": 600, "30m": 1800, "1h": 3600, "1d": 86400}
-_PAYOUT_RATES = {"10m": 0.8, "30m": 0.85, "1h": 0.85, "1d": 0.85}
 
 
 class SimulatedExecutor:
@@ -289,7 +287,7 @@ class SimulatedExecutor:
 
         settled = []
         for order in pending:
-            dur_sec = _DURATION_SECONDS.get(order.duration, 600)
+            dur_sec = EVENT_DURATION_SECONDS.get(order.duration, 600)
             # Check if order is due for settlement
             if not order.created_at:
                 continue
@@ -308,7 +306,7 @@ class SimulatedExecutor:
             entry_price = order.price or current_price
             direction = order.side  # 'buy' = up, 'sell' = down
             amount = order.quantity
-            payout_rate = _PAYOUT_RATES.get(order.duration, 0.85)
+            payout_rate = EVENT_PAYOUT_RATES.get(order.duration, 0.85)
 
             # Determine win/loss
             if (direction == "buy" and current_price > entry_price) or \

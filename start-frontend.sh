@@ -5,14 +5,19 @@ cd "$(dirname "$0")"
 
 check_port() {
     local port=$1
-    local pid
-    pid=$(lsof -ti:"$port" 2>/dev/null) || true
-    if [ -n "$pid" ]; then
-        echo "端口 $port 已被进程 PID=$pid 占用"
-        echo -n "是否杀掉该进程并继续？(y/n): "
+    local pids
+    pids=$(lsof -ti:"$port" 2>/dev/null) || true
+    if [ -n "$pids" ]; then
+        echo "端口 $port 已被以下进程占用:"
+        echo "$pids" | while read -r pid; do
+            echo "  PID=$pid $(ps -p "$pid" -o comm= 2>/dev/null || echo '')"
+        done
+        echo -n "是否杀掉所有进程并继续？(y/n): "
         read -r answer
         if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
-            kill -9 "$pid" 2>/dev/null
+            echo "$pids" | while read -r pid; do
+                kill -9 "$pid" 2>/dev/null
+            done
             sleep 1
             echo "已释放端口 $port"
         else

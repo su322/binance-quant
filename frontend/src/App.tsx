@@ -6,6 +6,7 @@ import AccountPanel from './components/AccountPanel';
 import TradingPanel from './components/TradingPanel';
 import { api } from './api/quantlab';
 import type { Kline, BacktestResult, Favorite, Order } from './types';
+import { EVENT_DURATION_SECONDS } from './constants';
 
 type Tab = 'chart' | 'backtest' | 'accounts' | 'replay';
 type Mode = 'spot' | 'perpetual' | 'event';
@@ -69,8 +70,7 @@ export default function App() {
   const [priceLines, setPriceLines] = useState<EventLine[]>([]);
 
   const getRemainingSeconds = (createdAt: string, dur: string) => {
-    const map: Record<string, number> = { '10m': 600, '30m': 1800, '1h': 3600, '1d': 86400 };
-    const secs = map[dur] || 1800;
+    const secs = EVENT_DURATION_SECONDS[dur] || 1800;
     const ts = createdAt.endsWith('Z') ? createdAt : createdAt + 'Z';
     const elapsed = (Date.now() - new Date(ts).getTime()) / 1000;
     return Math.max(0, Math.ceil(secs - elapsed));
@@ -296,7 +296,6 @@ export default function App() {
   // Compute event price lines with countdowns
   const eventLines: EventLine[] = [];
   if (mode === 'event' && eventOrders.length > 0) {
-    const durMap: Record<string, number> = { '10m': 600, '30m': 1800, '1h': 3600, '1d': 86400 };
     const pending = eventOrders.filter(o => o.status === 'pending' && o.symbol === symbol);
     pending.forEach(o => {
       const isUp = o.side === 'buy';

@@ -10,7 +10,7 @@ dist/
 
 # Database
 database/quantlab.db
-quant-lab/database/quantlab.db
+quant_lab/database/quantlab.db
 
 # Debug screenshots / snapshots
 *.png

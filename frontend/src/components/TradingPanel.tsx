@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { api } from '../api/quantlab';
 import type { Account, Order } from '../types';
 import type { EventLine } from './KlineChart';
-
+import { EVENT_DURATION_SECONDS, EVENT_PAYOUT_RATES } from '../constants';
 interface Props {
   symbol: string;
   lastPrice: number;
@@ -533,9 +533,9 @@ export default function TradingPanel({ symbol, lastPrice, mode, onEventOrdersCha
                 >↓ 跌</button>
               </div>
               <div style={{ fontSize: 11, color: '#6a6a80', marginBottom: 10, textAlign: 'center' }}>
-                支付率 {(duration === '10m' ? 0.8 : 0.85) * 100}%
+                支付率 {(EVENT_PAYOUT_RATES[duration] * 100)}%
                 {amount && parseFloat(amount) > 0 && (
-                  <span> &middot; 支付金额 {(parseFloat(amount) * (duration === '10m' ? 0.8 : 0.85)).toFixed(2)} USDT</span>
+                  <span> &middot; 支付金额 {(parseFloat(amount) * EVENT_PAYOUT_RATES[duration]).toFixed(2)} USDT</span>
                 )}
               </div>
               <button
@@ -561,8 +561,7 @@ export default function TradingPanel({ symbol, lastPrice, mode, onEventOrdersCha
                 ];
 
             const getRemainingSeconds = (createdAt: string, dur: string | null) => {
-              const map: Record<string, number> = { '10m': 600, '30m': 1800, '1h': 3600, '1d': 86400 };
-              const secs = map[dur || '30m'];
+              const secs = EVENT_DURATION_SECONDS[dur || '30m'];
               const ts = createdAt.endsWith('Z') ? createdAt : createdAt + 'Z';
               const elapsed = (Date.now() - new Date(ts).getTime()) / 1000;
               return Math.max(0, Math.ceil(secs - elapsed));
@@ -579,7 +578,7 @@ export default function TradingPanel({ symbol, lastPrice, mode, onEventOrdersCha
                 if (eventOpen.length === 0) return <div style={{ fontSize: 11, color: '#4a4a6a', textAlign: 'center', padding: '16px 0' }}>暂无数据</div>;
                 return eventOpen.map(o => {
                   const remaining = getRemainingSeconds(o.created_at, o.duration);
-                  const payoutRate = o.duration === '10m' ? 0.8 : 0.85;
+                  const payoutRate = EVENT_PAYOUT_RATES[o.duration || '30m'];
                   return (
                     <div key={o.id} style={{ fontSize: 12, padding: '8px 0', borderBottom: '1px solid #14142a' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -609,7 +608,7 @@ export default function TradingPanel({ symbol, lastPrice, mode, onEventOrdersCha
                 const wins = eventSettled.filter(o => o.status === 'filled');
                 const totalQty = eventSettled.reduce((s, o) => s + (o.quantity || 0), 0);
                 const totalProfit = wins.reduce((s, o) => {
-                  const rate = o.duration === '10m' ? 0.8 : 0.85;
+                  const rate = EVENT_PAYOUT_RATES[o.duration || '30m'];
                   return s + (o.quantity || 0) * rate;
                 }, 0);
                 const totalLoss = eventSettled.filter(o => o.status !== 'filled').reduce((s, o) => s + (o.quantity || 0), 0);
@@ -649,7 +648,7 @@ export default function TradingPanel({ symbol, lastPrice, mode, onEventOrdersCha
                     </div>
                     {eventSettled.slice().reverse().map(o => {
                   const isWin = o.status === 'filled';
-                  const payoutRate = o.duration === '10m' ? 0.8 : 0.85;
+                  const payoutRate = EVENT_PAYOUT_RATES[o.duration || '30m'];
                   const profit = isWin ? o.quantity * payoutRate : -o.quantity;
                   // created_at is open time, updated_at not stored, use close time from trade — approximate with current
                   return (

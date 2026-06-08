@@ -34,4 +34,3 @@ packages = [
     "quant_lab", "quant_lab.database", "quant_lab.routers",
     "quant_lab.services", "quant_lab.simulation",
 ]
-package-dir = {"quant_lab" = "quant-lab"}

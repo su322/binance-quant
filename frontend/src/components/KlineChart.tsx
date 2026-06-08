@@ -176,7 +176,15 @@ const KlineChart = memo(forwardRef<KlineChartHandle, Props>(({ data, height = 50
       },
       rightPriceScale: { borderColor: '#2a2a44' },
       crosshair: { mode: 0 },
-      localization: { locale: 'zh-CN' },
+      localization: {
+        locale: 'zh-CN',
+        timeFormatter: (time: number) => {
+          const d = new Date((time as number) * 1000);
+          const hh = String(d.getHours()).padStart(2, '0');
+          const mm = String(d.getMinutes()).padStart(2, '0');
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${hh}:${mm}`;
+        },
+      },
     });
 
     const candleSeries = chart.addSeries(CandlestickSeries, {

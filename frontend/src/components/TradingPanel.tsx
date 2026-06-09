@@ -525,12 +525,12 @@ export default function TradingPanel({ symbol, lastPrice, mode, onEventOrdersCha
                   className="mode-btn"
                   style={direction === 'up' ? { flex: 1, height: 44, background: '#1a3a2a', color: '#26a69a', fontWeight: 700, fontSize: 15 } : { flex: 1, height: 44, fontSize: 15 }}
                   onClick={() => setDirection('up')}
-                >↑ 涨</button>
+                >↑ {baseAsset} 涨</button>
                 <button
                   className="mode-btn"
                   style={direction === 'down' ? { flex: 1, height: 44, background: '#3a1a1a', color: '#ef5350', fontWeight: 700, fontSize: 15 } : { flex: 1, height: 44, fontSize: 15 }}
                   onClick={() => setDirection('down')}
-                >↓ 跌</button>
+                >↓ {baseAsset} 跌</button>
               </div>
               <div style={{ fontSize: 11, color: '#6a6a80', marginBottom: 10, textAlign: 'center' }}>
                 支付率 {(EVENT_PAYOUT_RATES[duration] * 100)}%
@@ -542,7 +542,7 @@ export default function TradingPanel({ symbol, lastPrice, mode, onEventOrdersCha
                 className="btn" style={{ width: '100%', background: direction === 'up' ? '#26a69a' : '#ef5350', color: '#fff', fontWeight: 600, opacity: placing ? 0.6 : 1 }}
                 disabled={placing || !amount} onClick={handlePlaceOrder}
               >
-                {placing ? '委托中...' : `预测${direction === 'up' ? '上涨' : '下跌'}`}
+                {placing ? '委托中...' : `预测 ${symbol} ${direction === 'up' ? '上涨' : '下跌'}`}
               </button>
             </div>
           )}
@@ -583,7 +583,7 @@ export default function TradingPanel({ symbol, lastPrice, mode, onEventOrdersCha
                     <div key={o.id} style={{ fontSize: 12, padding: '8px 0', borderBottom: '1px solid #14142a' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                         <span style={{ color: o.side === 'buy' ? '#26a69a' : '#ef5350', fontWeight: 600 }}>
-                          {o.side === 'buy' ? '看涨' : '看跌'} · {o.duration}
+                          {o.side === 'buy' ? '看涨' : '看跌'} {o.symbol} · {o.duration}
                         </span>
                         <span style={{ color: remaining > 60 ? '#7c7cff' : '#ef5350', fontWeight: 500 }}>
                           {remaining > 0 ? `${Math.floor(remaining/60)}:${String(remaining%60).padStart(2,'0')}` : '00:00'}
@@ -655,7 +655,7 @@ export default function TradingPanel({ symbol, lastPrice, mode, onEventOrdersCha
                     <div key={o.id} style={{ fontSize: 12, padding: '8px 0', borderBottom: '1px solid #14142a' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                         <span style={{ color: o.side === 'buy' ? '#26a69a' : '#ef5350', fontWeight: 600 }}>
-                          {o.side === 'buy' ? '看涨' : '看跌'} · {o.duration}
+                          {o.side === 'buy' ? '看涨' : '看跌'} {o.symbol} · {o.duration}
                         </span>
                         <span style={{ color: isWin ? '#26a69a' : '#ef5350', fontWeight: 600 }}>
                           {isWin ? '+' : ''}{profit.toFixed(2)} USDT
